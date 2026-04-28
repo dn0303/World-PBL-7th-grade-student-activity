@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korean War Historical Simulation</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #2c3e50;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        #game-container {
+            background-color: #e8dcc4;
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 5px;
+            border: 2px solid #bda881;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stamp {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #c0392b;
+            font-size: 2em;
+            font-weight: bold;
+            border: 4px solid #c0392b;
+            padding: 5px 15px;
+            transform: rotate(-15deg);
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 2.2em;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            border-bottom: 2px dashed #7f8c8d;
+            padding-bottom: 10px;
+        }
+        .parallel-line {
+            width: 100%;
+            height: 6px;
+            background-image: linear-gradient(to right, #2c3e50 50%, #c0392b 50%);
+            background-size: 30px 100%;
+            margin: 30px 0;
+            position: relative;
+        }
+        .parallel-text {
+            background: #e8dcc4;
+            padding: 0 15px;
+            color: #c0392b;
+            font-weight: bold;
+            font-size: 1.2em;
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 2px solid #c0392b;
+            border-radius: 4px;
+        }
+        
+        /* Transition Wrapper */
+        #content-wrapper {
+            transition: opacity 0.4s ease-in-out;
+            opacity: 1;
+        }
+        #content-wrapper.fade-out {
+            opacity: 0;
+        }
+
+        #visual-icon {
+            font-size: 4.5em;
+            background: #fff;
+            width: 110px;
+            height: 110px;
+            margin: 20px auto;
+            border-radius: 50%;
+            border: 4px solid #2c3e50;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            /* Flexbox ensures the emoji is perfectly centered regardless of the browser */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #story-text {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin: 30px 0;
+            min-height: 140px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 20px;
+            border-left: 5px solid #2c3e50;
+            text-align: left;
+            transition: background-color 0.4s ease, border-color 0.4s ease;
+        }
+        
+        /* New class for the alternate/incorrect history paths */
+        #story-text.alternate-path {
+            background-color: rgba(192, 57, 43, 0.15); /* Light red tint */
+            border-left: 5px solid #c0392b; /* Bold red border */
+        }
+
+        #story-text strong {
+            color: #c0392b;
+            background-color: rgba(241, 196, 15, 0.3);
+            padding: 0 4px;
+            border-radius: 3px;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+        button {
+            background-color: #2980b9;
+            color: white;
+            border: 2px solid #1f618d;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 85%;
+            max-width: 500px;
+            text-transform: uppercase;
+        }
+        button:hover {
+            background-color: #3498db;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        .historical-note {
+            background-color: #fcf3cf;
+            border: 2px dashed #f1c40f;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 1em;
+            text-align: left;
+            display: none;
+            color: #7d6608;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div class="stamp">TOP SECRET</div>
+        <h1>Operation: Korean War</h1>
+        
+        <div class="parallel-line">
+            <span class="parallel-text">38th Parallel</span>
+        </div>
+
+        <div id="content-wrapper">
+            <div id="visual-icon">🗺️</div>
+            <div id="historical-note" class="historical-note"></div>
+            <div id="story-text">Loading simulation data...</div>
+            
+            <div class="button-container" id="button-container">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // Expanded Simulation Data
+        const storyNodes = {
+            start: {
+                icon: "🗺️",
+                isAlternate: false,
+                text: "The year is <strong>1950</strong>. After World War II, the Korean peninsula was <strong>divided in half</strong>. The North is supported by the Soviet Union (Communist), and the South is supported by the United States (Capitalist). Suddenly, North Korean troops <strong>cross the 38th parallel</strong> into the South! What should South Korea and its allies do?",
+                note: "",
+                choices: [
+                    { text: "Ask the United Nations (UN) for help", nextNode: "un_help" },
+                    { text: "Do nothing and hope it ends quickly", nextNode: "do_nothing" }
+                ]
+            },
+            do_nothing: {
+                icon: "❌",
+                isAlternate: true,
+                text: "You chose to do nothing. If the world had done nothing, South Korea would have likely been <strong>completely taken over</strong>. Let's get back to the real timeline.",
+                note: "History Check: President Harry Truman and the United Nations actually decided to step in immediately to stop the spread of communism.",
+                choices: [
+                    { text: "Return to the real historical timeline...", nextNode: "un_help" }
+                ]
+            },
+            un_help: {
+                icon: "🇺🇳",
+                isAlternate: false,
+                text: "The <strong>United Nations agrees to help</strong>! However, before they can arrive in large numbers, the North Korean army pushes the South Korean forces all the way down to a tiny corner of the peninsula called the <strong>Pusan Perimeter</strong>. What should the UN forces do?",
+                note: "",
+                choices: [
+                    { text: "Hold the line and defend Pusan at all costs", nextNode: "hold_pusan" },
+                    { text: "Evacuate the troops by ship to save them", nextNode: "evacuate" }
+                ]
+            },
+            evacuate: {
+                icon: "🚢",
+                isAlternate: true,
+                text: "If the troops had evacuated, South Korea would have been lost entirely! Luckily, the UN forces decided to make a brave stand.",
+                note: "",
+                choices: [
+                    { text: "See what actually happened...", nextNode: "hold_pusan" }
+                ]
+            },
+            hold_pusan: {
+                icon: "🛡️",
+                isAlternate: false,
+                text: "The UN and South Korean forces <strong>hold the line at Pusan</strong>! Now, General Douglas MacArthur wants to launch a daring counter-attack. He wants to sail troops behind enemy lines and launch a surprise attack at <strong>Inchon</strong>. It is incredibly risky due to extreme tides.",
+                note: "",
+                choices: [
+                    { text: "Approve the risky surprise attack at Inchon", nextNode: "inchon" },
+                    { text: "Attack safely by land from Pusan instead", nextNode: "safe_attack" }
+                ]
+            },
+            safe_attack: {
+                icon: "🚶",
+                isAlternate: true,
+                text: "Attacking safely by land would have taken months and cost many lives. General MacArthur convinced the leaders to try his bold plan instead.",
+                note: "",
+                choices: [
+                    { text: "Launch the Inchon Invasion...", nextNode: "inchon" }
+                ]
+            },
+            inchon: {
+                icon: "⚓",
+                isAlternate: false,
+                text: "The <strong>Inchon Landing is a massive success!</strong> The surprise attack works, and the North Korean army is forced to retreat <strong>back across the 38th parallel</strong>. Now MacArthur has another big decision: should he stop at the border, or push deep into North Korea?",
+                note: "History Check: This daring move completely changed the direction of the war.",
+                choices: [
+                    { text: "Stop at the 38th parallel border", nextNode: "stop_border" },
+                    { text: "Keep pushing north toward China", nextNode: "push_north" }
+                ]
+            },
+            stop_border: {
+                icon: "🛑",
+                isAlternate: true,
+                text: "Stopping at the border would have kept the original peace, but leaders wanted to completely reunite Korea under one democratic government.",
+                note: "",
+                choices: [
+                    { text: "See what MacArthur really did...", nextNode: "push_north" }
+                ]
+            },
+            push_north: {
+                icon: "⚔️",
+                isAlternate: false,
+                text: "UN forces push deep into North Korea, getting very close to the <strong>Yalu River</strong> (the border with China). China sends warnings that they will attack if the UN forces get any closer. What should General MacArthur do?",
+                note: "",
+                choices: [
+                    { text: "Listen to the warning and halt the troops", nextNode: "listen_china" },
+                    { text: "Ignore the warning and keep marching", nextNode: "ignore_china" }
+                ]
+            },
+            listen_china: {
+                icon: "👂",
+                isAlternate: true,
+                text: "If MacArthur had listened, a massive disaster might have been avoided. But he did not believe China would actually attack.",
+                note: "",
+                choices: [
+                    { text: "See what actually happened...", nextNode: "ignore_china" }
+                ]
+            },
+            ignore_china: {
+                icon: "❄️",
+                isAlternate: false,
+                text: "MacArthur ignores the warning. Suddenly, <strong>hundreds of thousands of Chinese troops</strong> enter the war! The UN forces are caught by surprise in freezing winter weather at the <strong>Chosin Reservoir</strong>. They are completely surrounded.",
+                note: "History Check: Temperatures dropped to 30 degrees below zero. It was one of the most brutal battles in history.",
+                choices: [
+                    { text: "Fight your way out through the mountains", nextNode: "fight_retreat" },
+                    { text: "Surrender to the enemy forces", nextNode: "surrender" }
+                ]
+            },
+            surrender: {
+                icon: "🏳️",
+                isAlternate: true,
+                text: "Surrender was not an option for these soldiers! They decided to break out of the trap.",
+                note: "",
+                choices: [
+                    { text: "Join the breakout...", nextNode: "fight_retreat" }
+                ]
+            },
+            fight_retreat: {
+                icon: "🏔️",
+                isAlternate: false,
+                text: "In an amazing act of bravery, the UN forces <strong>fight their way out</strong> of the trap and march to the sea to be rescued. The Chinese forces push the UN back south. After months of fighting, the war becomes a <strong>stalemate</strong> right back near the 38th parallel.",
+                note: "",
+                choices: [
+                    { text: "Sign an armistice (a ceasefire)", nextNode: "armistice" },
+                    { text: "Keep fighting for total victory", nextNode: "keep_fighting" }
+                ]
+            },
+            keep_fighting: {
+                icon: "⚠️",
+                isAlternate: true,
+                text: "Leaders realized a total victory was impossible without risking World War III and dropping atomic bombs. They decided they had to find a peaceful pause.",
+                note: "",
+                choices: [
+                    { text: "See how the conflict actually paused...", nextNode: "armistice" }
+                ]
+            },
+            armistice: {
+                icon: "🤝",
+                isAlternate: false,
+                text: "In <strong>1953</strong>, an <strong>armistice (ceasefire)</strong> was signed. A <strong>Demilitarized Zone (DMZ)</strong> was created near the 38th parallel, heavily guarded by both sides. Today, North and South Korea <strong>remain divided</strong>.",
+                note: "Why it matters today: Studying this 'difficult history' helps us understand why the Korean peninsula is still divided and why global diplomacy is so important.",
+                choices: [
+                    { text: "Restart Mission", nextNode: "start" }
+                ]
+            }
+        };
+
+        const contentWrapper = document.getElementById('content-wrapper');
+        const storyTextElement = document.getElementById('story-text');
+        const buttonContainer = document.getElementById('button-container');
+        const noteElement = document.getElementById('historical-note');
+        const iconElement = document.getElementById('visual-icon');
+
+        function startGame() {
+            updateContent('start');
+        }
+
+        function showNode(nodeId) {
+            contentWrapper.classList.add('fade-out');
+            
+            setTimeout(() => {
+                updateContent(nodeId);
+                contentWrapper.classList.remove('fade-out');
+            }, 400); 
+        }
+
+        function updateContent(nodeId) {
+            const node = storyNodes[nodeId];
+            
+            iconElement.innerText = node.icon;
+            storyTextElement.innerHTML = node.text;
+
+            // Apply the color code class if it's an alternate history node
+            if (node.isAlternate) {
+                storyTextElement.classList.add('alternate-path');
+            } else {
+                storyTextElement.classList.remove('alternate-path');
+            }
+
+            if (node.note && node.note.trim() !== "") {
+                noteElement.innerText = node.note;
+                noteElement.style.display = "block";
+            } else {
+                noteElement.style.display = "none";
+            }
+
+            buttonContainer.innerHTML = '';
+
+            node.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.innerText = choice.text;
+                button.onclick = () => showNode(choice.nextNode);
+                buttonContainer.appendChild(button);
+            });
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
